@@ -2,14 +2,18 @@ function Home() {
 
   return (
 
-    <div>
+    <div className="container mt-5">
 
-      <h1>
-        TechServices Hub
-      </h1>
+      <h2>
+
+        🚗 Panel Principal
+
+      </h2>
 
       <p>
-        Sistema de gestión de servicios
+
+        Bienvenido al sistema de alquiler de autos
+
       </p>
 
     </div>
