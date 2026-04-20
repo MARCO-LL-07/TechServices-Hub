@@ -2,6 +2,8 @@ const Usuario = require("./Usuario");
 const Carro = require("./carro");
 const Alquiler = require("./Alquiler");
 const Pago = require("./Pago");
+const Categoria = require("./Categoria");
+
 
 // Relaciones
 Usuario.hasMany(Alquiler, { foreignKey: "usuario_id" });
@@ -13,9 +15,13 @@ Alquiler.belongsTo(Carro, { foreignKey: "carro_id" });
 Alquiler.hasOne(Pago, { foreignKey: "alquiler_id" });
 Pago.belongsTo(Alquiler, { foreignKey: "alquiler_id" });
 
+Categoria.hasMany(Carro, { foreignKey: "categoria_id" });
+Carro.belongsTo(Categoria, { foreignKey: "categoria_id" });
+
 module.exports = {
   Usuario,
   Carro,
   Alquiler,
-  Pago
+  Pago,
+  Categoria
 };

@@ -12,7 +12,8 @@ const Alquiler = sequelize.define("Alquiler", {
   }
 }, {
   tableName: "alquileres",
-  timestamps: false
+  timestamps: true,
+  paranoid: true
 });
 
 module.exports = Alquiler;

@@ -12,7 +12,8 @@ const Pago = sequelize.define("Pago", {
   }
 }, {
   tableName: "pagos",
-  timestamps: false
+  timestamps: true,
+  paranoid: true
 });
 
 module.exports = Pago;

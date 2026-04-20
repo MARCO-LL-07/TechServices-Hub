@@ -7,14 +7,15 @@ const Usuario = sequelize.define("Usuario", {
     type: DataTypes.STRING,
     unique: true
   },
-  contraseña: DataTypes.STRING,
+  password: DataTypes.STRING,
   rol: {
     type: DataTypes.ENUM("admin", "cliente"),
     defaultValue: "cliente"
   }
 }, {
   tableName: "usuarios",
-  timestamps: false
+  timestamps: true,
+  paranoid: true
 });
 
 module.exports = Usuario;
