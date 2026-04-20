@@ -1,8 +1,8 @@
 const Usuario = require("./Usuario");
-const Carro = require("./carro");
+const Carro = require("./Carro");
 const Alquiler = require("./Alquiler");
 const Pago = require("./Pago");
-const Categoria = require("./Categoria");
+const Categoria = require("./categoria");
 
 
 // Relaciones
