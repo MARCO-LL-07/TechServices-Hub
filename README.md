@@ -28,5 +28,5 @@ git clone https://github.com/MARCO-LL-07/TechServices-Hub
 
 ## Autores
 
-| [<img src="https://github.com/CarlosMIlanRojas.png" width="115"><br><sub>CARLOS MILAN ROJAS IRIGOYEN</sub>] | [<img src="https://github.com/Leonardo346.png" width="115"><br><sub>LEONARDO CESAR HUACHALLANQUI SONCO</sub>](https://github.com/) | [<img src="https://github.com/MARCO-LL-07.png" width="115"><br><sub>MARCO AURELIO CHIPANA LLANTOY</sub>](https://github.com/) |
+| [<img src="https://github.com/CarlosMIlanRojas.png" width="115"><br><sub>CARLOS MILAN ROJAS IRIGOYEN</sub>](https://github.com/CarlosMIlanRojas) | [<img src="https://github.com/Leonardo346.png" width="115"><br><sub>LEONARDO CESAR HUACHALLANQUI SONCO</sub>](https://github.com/Leonardo346) | [<img src="https://github.com/MARCO-LL-07.png" width="115"><br><sub>MARCO AURELIO CHIPANA LLANTOY</sub>](https://github.com/https://github.com/MARCO-LL-07) |
 | :---: | :---: | :---: |
