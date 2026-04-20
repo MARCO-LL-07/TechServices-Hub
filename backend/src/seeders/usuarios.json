@@ -1,0 +1,14 @@
+[
+  {
+    "nombre": "Admin User",
+    "correo": "admin@test.com",
+    "contraseña": "admin123",
+    "rol": "admin"
+  },
+  {
+    "nombre": "Client User",
+    "correo": "cliente@test.com",
+    "contraseña": "cliente123",
+    "rol": "cliente"
+  }
+]
