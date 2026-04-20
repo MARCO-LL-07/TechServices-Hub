@@ -1,0 +1,55 @@
+# Dependencias
+node_modules/
+*/node_modules/
+
+# Archivos de entorno (MUY IMPORTANTE)
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Build / producción
+dist/
+build/
+.client-build/
+.server-build/
+
+# Cache
+.cache/
+.parcel-cache/
+.next/
+out/
+
+# Archivos de editor
+.vscode/
+.idea/
+
+# Base de datos (según config)
+*.sqlite
+*.sqlite3
+database.sqlite
+
+# Sequelize
+migrations/*.js
+seeders/*.js
+
+# Archivos temporales
+tmp/
+temp/
+
+# Coverage (tests)
+coverage/
+
+# Archivos lock (opcional, pero normalmente se sube package-lock.json)
+# package-lock.json
+# yarn.lock
