@@ -4,6 +4,7 @@ import api from "../services/api";
 
 function AdminDashboard() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
     total_carros: 0,
     disponibles: 0,
@@ -16,12 +17,15 @@ function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        setLoading(true);
         // Asumiendo que tienes un endpoint que devuelve estas estadísticas
         const response = await api.get("/stats/dashboard");
         setStats(response.data);
       } catch (error) {
         console.error("Error al obtener las estadísticas:", error);
         // Opcional: mostrar un mensaje de error
+      } finally {
+        setLoading(false);
       }
     };
     fetchStats();
@@ -30,6 +34,13 @@ function AdminDashboard() {
   return (
     <div className="container mt-4">
       <h2>📊 Panel Administrador</h2>
+
+      {loading && (
+        <div className="my-3">
+          <div className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+          <span className="ms-2">Cargando estadisticas...</span>
+        </div>
+      )}
 
       {/* Estadísticas */}
       <div className="row mt-4">

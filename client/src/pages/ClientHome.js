@@ -1,27 +1,67 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 function ClientHome() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [categoria, setCategoria] = useState("");
   const [carros, setCarros] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [loadingCars, setLoadingCars] = useState(false);
+  const [loadingCategorias, setLoadingCategorias] = useState(false);
 
-  useEffect(() => {
-    const fetchCarros = async () => {
-      try {
-        const response = await api.get("/cars");
-        setCarros(response.data);
-      } catch (error) {
-        console.error("Error al obtener los carros:", error);
-        alert("No se pudieron cargar los vehículos.");
-      }
-    };
-    fetchCarros();
+  const apiBase = process.env.REACT_APP_API_URL || "http://localhost:8080/api";
+  const assetBaseUrl = useMemo(() => apiBase.replace(/\/api\/?$/, ""), [apiBase]);
+
+  const resolveImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http")) return url;
+    return `${assetBaseUrl}${url}`;
+  };
+
+  const fetchCarros = useCallback(async () => {
+    try {
+      setLoadingCars(true);
+      const response = await api.get("/cars", {
+        params: {
+          search: search || undefined,
+          categoria: categoria || undefined
+        }
+      });
+      setCarros(response.data || []);
+    } catch (error) {
+      console.error("Error al obtener los carros:", error);
+      alert("No se pudieron cargar los vehiculos.");
+    } finally {
+      setLoadingCars(false);
+    }
+  }, [search, categoria]);
+
+  const fetchCategorias = useCallback(async () => {
+    try {
+      setLoadingCategorias(true);
+      const response = await api.get("/categories");
+      setCategorias(response.data || []);
+    } catch (error) {
+      console.error("Error al obtener categorias:", error);
+    } finally {
+      setLoadingCategorias(false);
+    }
   }, []);
 
-  const filteredCars =
-    carros.filter((car) =>
-      car.modelo.toLowerCase().includes(search.toLowerCase())
-    );
+  useEffect(() => {
+    fetchCategorias();
+  }, [fetchCategorias]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchCarros();
+    }, 250);
+    return () => clearTimeout(timeoutId);
+  }, [fetchCarros]);
+
+  const filteredCars = carros;
 
   const handleAlquilar = async (id) => {
     try {
@@ -53,18 +93,49 @@ function ClientHome() {
     <div className="container mt-4">
       <h2>🚗 Vehículos Disponibles</h2>
 
+      <div className="d-flex flex-wrap gap-2 mb-3">
+        <button className="btn btn-outline-primary" onClick={() => navigate("/client")}>Ir a Mi Panel</button>
+        <button className="btn btn-outline-secondary" onClick={fetchCarros}>Recargar Lista</button>
+      </div>
+
       <input
         type="text"
         className="form-control mb-4"
-        placeholder="Buscar vehículo por modelo..."
+        placeholder="Buscar por marca o modelo..."
+        value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
 
+      <select
+        className="form-select mb-4"
+        value={categoria}
+        onChange={(e) => setCategoria(e.target.value)}
+        disabled={loadingCategorias}
+      >
+        <option value="">Todas las categorias</option>
+        {categorias.map((cat) => (
+          <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+        ))}
+      </select>
+
       <div className="row">
-        {filteredCars.length > 0 ? (
+        {loadingCars ? (
+          <div className="text-center py-4">
+            <div className="spinner-border" role="status" aria-hidden="true" />
+            <span className="ms-2">Consultando base de datos...</span>
+          </div>
+        ) : filteredCars.length > 0 ? (
           filteredCars.map((car) => (
             <div key={car.id} className="col-md-4 mb-4">
               <div className="card shadow">
+                {car.imagen_url && (
+                  <img
+                    src={resolveImageUrl(car.imagen_url)}
+                    className="card-img-top"
+                    alt={`${car.marca} ${car.modelo}`}
+                    style={{ height: 180, objectFit: "cover" }}
+                  />
+                )}
                 <div className="card-body">
                   <h5>
                     {car.marca} {car.modelo}

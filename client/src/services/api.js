@@ -1,8 +1,11 @@
 import axios from 'axios';
 
+const rawBaseURL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+const baseURL = rawBaseURL.endsWith('/') ? rawBaseURL.slice(0, -1) : rawBaseURL;
+
 // Crea una instancia de Axios con configuración predeterminada
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080/api',
+  baseURL,
   timeout: 10000, // 10 segundos de timeout
   headers: {
     'Content-Type': 'application/json',

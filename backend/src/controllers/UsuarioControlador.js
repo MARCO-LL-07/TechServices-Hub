@@ -6,8 +6,11 @@ exports.register = async (req, res) => {
   try {
     const { nombre, correo, contraseña, password, rol } = req.body;
     const pwd = contraseña || password;
+    if (!nombre || !correo || !pwd) {
+      return res.status(400).json({ message: "Nombre, correo y password son obligatorios" });
+    }
     const rolNormalizado = (rol || 'cliente').toLowerCase();
-    const newUser = await Usuario.create({ nombre, correo, contraseña: pwd, rol: rolNormalizado });
+    const newUser = await Usuario.create({ nombre, correo, password: pwd, rol: rolNormalizado });
     res.status(201).json({ message: "Usuario registrado con éxito", userId: newUser.id });
   } catch (error) {
     res.status(500).json({ message: "Error al registrar el usuario", error: error.message });
@@ -51,7 +54,7 @@ exports.login = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await Usuario.findAll({
-      attributes: { exclude: ['contraseña'] } // Excluir contraseña de la respuesta
+      attributes: { exclude: ['password'] } // Excluir password de la respuesta
     });
     res.json(users);
   } catch (error) {

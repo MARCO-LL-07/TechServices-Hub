@@ -10,13 +10,21 @@ const seedDatabase = async () => {
 
     for (const userData of usuariosData) {
       const existing = await Usuario.findOne({ where: { correo: userData.correo } });
+      const passwordPlano = userData.password || userData.contraseña;
       if (existing) {
         existing.nombre = userData.nombre;
         existing.rol = userData.rol;
-        existing.contraseña = userData.contraseña;
+        if (passwordPlano) {
+          existing.password = passwordPlano;
+        }
         await existing.save();
       } else {
-        await Usuario.create(userData);
+        await Usuario.create({
+          nombre: userData.nombre,
+          correo: userData.correo,
+          rol: userData.rol,
+          password: passwordPlano
+        });
       }
     }
 

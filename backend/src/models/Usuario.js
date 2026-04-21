@@ -12,7 +12,7 @@ const Usuario = sequelize.define("Usuario", {
       isEmail: true,
     },
   },
-  contraseña: {
+  password: {
     type: DataTypes.STRING,
     allowNull: false,
   },
@@ -27,15 +27,15 @@ const Usuario = sequelize.define("Usuario", {
   updatedAt: false,
   hooks: {
     beforeCreate: async (usuario) => {
-      if (usuario.contraseña) {
+      if (usuario.password) {
         const salt = await bcrypt.genSalt(10);
-        usuario.contraseña = await bcrypt.hash(usuario.contraseña, salt);
+        usuario.password = await bcrypt.hash(usuario.password, salt);
       }
     },
     beforeUpdate: async (usuario) => {
-      if (usuario.changed('contraseña')) {
+      if (usuario.changed('password')) {
         const salt = await bcrypt.genSalt(10);
-        usuario.contraseña = await bcrypt.hash(usuario.contraseña, salt);
+        usuario.password = await bcrypt.hash(usuario.password, salt);
       }
     }
   }
@@ -43,7 +43,7 @@ const Usuario = sequelize.define("Usuario", {
 
 // Método para comparar contraseñas
 Usuario.prototype.comparePassword = function(candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.contraseña);
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
 module.exports = Usuario;
