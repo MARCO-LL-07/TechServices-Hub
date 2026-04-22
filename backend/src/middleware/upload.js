@@ -1,17 +1,24 @@
-const fs = require("fs");
-const path = require("path");
 const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 
-const uploadDir = path.join(__dirname, "..", "..", "uploads", "cars");
+// Carpeta donde se guardarán las imágenes
+const uploadDir = path.join(__dirname, '../../uploads/cars');
+
+// Asegurar que la carpeta exista
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Configuración de almacenamiento en disco para Multer
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const safeName = file.originalname.replace(/\s+/g, "-").toLowerCase();
-    cb(null, `${Date.now()}-${safeName}`);
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Nombre único: timestamp + aleatorio + extensión original
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'car-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
 
@@ -26,5 +33,5 @@ const fileFilter = (_req, file, cb) => {
 module.exports = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });

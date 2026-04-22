@@ -7,10 +7,30 @@ const baseURL = rawBaseURL.endsWith('/') ? rawBaseURL.slice(0, -1) : rawBaseURL;
 const apiClient = axios.create({
   baseURL,
   timeout: 10000, // 10 segundos de timeout
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
+
+/**
+ * Resuelve una URL de imagen, ya sea absoluta (externa) o relativa (servidor local).
+ * @param {string} url - La URL de la imagen guardada en la base de datos.
+ * @returns {string} - La URL completa para mostrar en la etiqueta <img>.
+ */
+export const resolveImageUrl = (url) => {
+  if (!url) return "";
+  
+  // Si es una URL absoluta o Base64, devolver tal cual
+  if (url.startsWith('data:image/') || /^(https?:\/\/|\/\/)/.test(url)) {
+    return url;
+  }
+  
+  // Obtener la raíz del servidor (ej: http://localhost:8080)
+  const serverRoot = baseURL.replace(/\/api\/?$/, "");
+  
+  // Asegurar que la ruta comience con /
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  
+  // Retornar URL completa con cache-busting
+  return `${serverRoot}${cleanUrl}?t=${new Date().getTime()}`;
+};
 
 // Interceptor de Solicitudes (Request)
 // Aquí puedes añadir lógica para incluir tokens de autenticación en cada solicitud

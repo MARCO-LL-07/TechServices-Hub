@@ -17,6 +17,18 @@ function ClientHome() {
   const resolveImageUrl = (url) => {
     if (!url) return "";
     if (url.startsWith("http")) return url;
+    try {
+      const asset = new URL(assetBaseUrl);
+      if (asset.protocol !== window.location.protocol) {
+        return `${window.location.protocol}//${window.location.host}${url}`;
+      }
+    } catch (e) {
+      // fall back
+    }
+    // If image is served from local uploads, add a cache-busting query param
+    if (url.startsWith('/uploads/')) {
+      return `${assetBaseUrl}${url}?t=${Date.now()}`;
+    }
     return `${assetBaseUrl}${url}`;
   };
 
@@ -29,6 +41,7 @@ function ClientHome() {
           categoria: categoria || undefined
         }
       });
+      console.debug('ClientHome fetchCarros response:', response.data);
       setCarros(response.data || []);
     } catch (error) {
       console.error("Error al obtener los carros:", error);

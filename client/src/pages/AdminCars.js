@@ -1,6 +1,26 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import api, { resolveImageUrl } from "../services/api";
+
+// Estilos para las notificaciones
+const notificationStyles = {
+  position: 'fixed',
+  top: '20px',
+  right: '20px',
+  padding: '15px 20px',
+  borderRadius: '8px',
+  color: 'white',
+  zIndex: 1050,
+  minWidth: '300px',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  transition: 'transform 0.3s ease-in-out, opacity 0.3s ease-in-out',
+  transform: 'translateX(110%)',
+  opacity: 0,
+};
+
+const successStyle = { ...notificationStyles, backgroundColor: '#28a745' };
+const errorStyle = { ...notificationStyles, backgroundColor: '#dc3545' };
+const infoStyle = { ...notificationStyles, backgroundColor: '#17a2b8' };
 
 function AdminCars() {
   const navigate = useNavigate();
@@ -12,6 +32,8 @@ function AdminCars() {
   const [loadingCategorias, setLoadingCategorias] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState(null);
+  const [notification, setNotification] = useState(null);
+
   const [form, setForm] = useState({
     marca: "",
     modelo: "",
@@ -20,17 +42,41 @@ function AdminCars() {
     placa: "",
     precio_por_dia: "",
     estado: "disponible",
-    imagen_url: ""
   });
   const [editando, setEditando] = useState(null);
 
-  const apiBase = process.env.REACT_APP_API_URL || "http://localhost:8080/api";
-  const assetBaseUrl = useMemo(() => apiBase.replace(/\/api\/?$/, ""), [apiBase]);
+  useEffect(() => {
+    if (notification) {
+      // Animar la entrada
+      setTimeout(() => {
+        const el = document.getElementById('notification-banner');
+        if (el) {
+          el.style.transform = 'translateX(0)';
+          el.style.opacity = 1;
+        }
+      }, 10);
 
-  const resolveImageUrl = (url) => {
-    if (!url) return "";
-    if (url.startsWith("http")) return url;
-    return `${assetBaseUrl}${url}`;
+      // Ocultar después de 5 segundos
+      const timer = setTimeout(() => {
+        hideNotification();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+  };
+
+  const hideNotification = () => {
+    const el = document.getElementById('notification-banner');
+    if (el) {
+      el.style.transform = 'translateX(110%)';
+      el.style.opacity = 0;
+      setTimeout(() => setNotification(null), 300);
+    } else {
+      setNotification(null);
+    }
   };
 
   const fetchCarros = useCallback(async () => {
@@ -45,6 +91,7 @@ function AdminCars() {
       setCarros(response.data);
     } catch (error) {
       console.error("Error al obtener carros:", error);
+      showNotification("Error cargando la lista de carros.", "error");
     } finally {
       setLoadingCars(false);
     }
@@ -57,6 +104,7 @@ function AdminCars() {
       setCategorias(response.data || []);
     } catch (error) {
       console.error("Error al obtener categorias:", error);
+      showNotification("Error cargando las categorías.", "error");
     } finally {
       setLoadingCategorias(false);
     }
@@ -85,43 +133,43 @@ function AdminCars() {
   const guardarCarro = async (e) => {
     e.preventDefault();
     if (!form.marca || !form.modelo || !form.año || !form.placa || !form.precio_por_dia) {
-      alert("Complete todos los campos");
+      showNotification("Por favor, complete todos los campos obligatorios.", "error");
       return;
     }
 
+    setSubmitting(true);
+
+    // Usamos FormData para enviar archivos y texto juntos
+    const formData = new FormData();
+    formData.append("marca", form.marca);
+    formData.append("modelo", form.modelo);
+    formData.append("año", form.año);
+    formData.append("placa", form.placa);
+    formData.append("precio_por_dia", form.precio_por_dia);
+    formData.append("estado", form.estado);
+    if (form.categoria_id) {
+      formData.append("categoria_id", form.categoria_id);
+    }
+    if (imageFile) {
+      formData.append("imagen", imageFile);
+    }
+
     try {
-      setSubmitting(true);
-
-      const payload = new FormData();
-      payload.append("marca", form.marca);
-      payload.append("modelo", form.modelo);
-      payload.append("anio", form.año);
-      payload.append("placa", form.placa);
-      payload.append("precio_por_dia", form.precio_por_dia);
-      payload.append("estado", form.estado);
-      if (form.categoria_id) {
-        payload.append("categoria_id", form.categoria_id);
-      }
-      if (imageFile) {
-        payload.append("imagen", imageFile);
-      }
-
       if (editando) {
-        await api.put(`/cars/${editando}`, payload, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
-        alert("Carro actualizado con éxito");
+        await api.put(`/cars/${editando}`, formData);
+        showNotification("Carro actualizado con éxito.", "success");
       } else {
-        await api.post("/cars", payload, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
-        alert("Carro agregado con éxito");
+        await api.post("/cars", formData);
+        showNotification("Carro agregado con éxito.", "success");
       }
+      
       await fetchCarros();
       resetForm();
+
     } catch (error) {
       console.error("Error al guardar carro:", error);
-      alert("Error al guardar el carro. Verifique la consola para más detalles.");
+      const detail = error?.response?.data?.message || error.message || "Error desconocido.";
+      showNotification(`Error al guardar: ${detail}`, "error");
     } finally {
       setSubmitting(false);
     }
@@ -136,21 +184,22 @@ function AdminCars() {
       placa: carro.placa || "",
       precio_por_dia: carro.precio_por_dia || "",
       estado: carro.estado || "disponible",
-      imagen_url: carro.imagen_url || ""
+      // Ya no necesitamos 'imagen_url' en el estado del formulario
     });
     setImageFile(null);
     setEditando(carro.id);
+    window.scrollTo(0, 0); // Mover la vista al formulario
   };
 
   const eliminarCarro = async (id) => {
-    if (window.confirm("¿Eliminar este carro?")) {
+    if (window.confirm("¿Está seguro de que desea eliminar este carro?")) {
       try {
         await api.delete(`/cars/${id}`);
-        alert("Carro eliminado con éxito");
+        showNotification("Carro eliminado con éxito.", "success");
         fetchCarros();
       } catch (error) {
         console.error("Error al eliminar carro:", error);
-        alert("Error al eliminar el carro.");
+        showNotification("Error al eliminar el carro.", "error");
       }
     }
   };
@@ -164,7 +213,6 @@ function AdminCars() {
       placa: "",
       precio_por_dia: "",
       estado: "disponible",
-      imagen_url: ""
     });
     setImageFile(null);
     setEditando(null);
@@ -176,6 +224,20 @@ function AdminCars() {
 
   return (
     <div className="container mt-4">
+      {notification && (
+        <div
+          id="notification-banner"
+          style={
+            notification.type === 'success' ? successStyle :
+            notification.type === 'error' ? errorStyle :
+            infoStyle
+          }
+          onClick={hideNotification}
+        >
+          {notification.message}
+        </div>
+      )}
+
       <h2>🚗 Gestión de Carros</h2>
 
       <div className="d-flex flex-wrap gap-2 mb-3">
@@ -223,13 +285,13 @@ function AdminCars() {
         <h5>{editando ? "Editar Carro" : "Agregar Carro"}</h5>
         <form className="row" onSubmit={guardarCarro}>
           <div className="col-md-4">
-            <input type="text" name="marca" placeholder="Marca" className="form-control mb-2" value={form.marca} onChange={handleChange} />
+            <input type="text" name="marca" placeholder="Marca" className="form-control mb-2" value={form.marca} onChange={handleChange} required />
           </div>
           <div className="col-md-4">
-            <input type="text" name="modelo" placeholder="Modelo" className="form-control mb-2" value={form.modelo} onChange={handleChange} />
+            <input type="text" name="modelo" placeholder="Modelo" className="form-control mb-2" value={form.modelo} onChange={handleChange} required />
           </div>
           <div className="col-md-4">
-            <input type="number" name="año" placeholder="Año" className="form-control mb-2" value={form.año} onChange={handleChange} />
+            <input type="number" name="año" placeholder="Año" className="form-control mb-2" value={form.año} onChange={handleChange} required />
           </div>
           <div className="col-md-4">
             <select name="categoria_id" className="form-control mb-2" value={form.categoria_id} onChange={handleChange}>
@@ -240,10 +302,10 @@ function AdminCars() {
             </select>
           </div>
           <div className="col-md-4">
-            <input type="text" name="placa" placeholder="Placa" className="form-control mb-2" value={form.placa} onChange={handleChange} />
+            <input type="text" name="placa" placeholder="Placa" className="form-control mb-2" value={form.placa} onChange={handleChange} required />
           </div>
           <div className="col-md-4">
-            <input type="number" name="precio_por_dia" placeholder="Precio por día" className="form-control mb-2" value={form.precio_por_dia} onChange={handleChange} />
+            <input type="number" name="precio_por_dia" placeholder="Precio por día" className="form-control mb-2" value={form.precio_por_dia} onChange={handleChange} required />
           </div>
           <div className="col-md-4">
             <select name="estado" className="form-control mb-2" value={form.estado} onChange={handleChange}>
@@ -252,80 +314,71 @@ function AdminCars() {
               <option value="mantenimiento">Mantenimiento</option>
             </select>
           </div>
-          <div className="col-md-6">
-            <input type="file" accept="image/*" className="form-control mb-2" onChange={handleImageChange} />
+          <div className="col-md-8">
+            <label className="form-label">Subir nueva imagen</label>
+            <input type="file" name="imagen" accept="image/*" className="form-control mb-2" onChange={handleImageChange} />
+            {editando && <small className="form-text text-muted">Dejar en blanco para conservar la imagen actual.</small>}
           </div>
-          <div className="col-md-6 d-flex align-items-end gap-2">
-            <button className="btn btn-success mt-2" type="submit" disabled={submitting}>
-              {submitting ? "Guardando..." : editando ? "Actualizar" : "Agregar"}
+          <div className="col-12 d-flex justify-content-end gap-2">
+            {editando && <button type="button" className="btn btn-secondary" onClick={resetForm}>Cancelar Edición</button>}
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
+              {submitting ? 'Guardando...' : (editando ? 'Actualizar Carro' : 'Agregar Carro')}
             </button>
-            {editando && (
-              <button className="btn btn-secondary mt-2" type="button" onClick={resetForm}>
-                Cancelar Edición
-              </button>
-            )}
           </div>
-          {form.imagen_url && (
-            <div className="col-12 mt-2">
-              <small className="text-muted d-block">Imagen actual:</small>
-              <img src={resolveImageUrl(form.imagen_url)} alt="actual" style={{ maxHeight: 120 }} />
-            </div>
-          )}
         </form>
       </div>
 
-      <table className="table table-striped">
-        <thead className="table-dark">
-          <tr>
-            <th>ID</th>
-            <th>Marca</th>
-            <th>Modelo</th>
-            <th>Año</th>
-            <th>Placa</th>
-            <th>Precio</th>
-            <th>Estado</th>
-            <th>Imagen</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loadingCars ? (
+      <div className="table-responsive">
+        <table className="table table-striped table-hover">
+          <thead>
             <tr>
-              <td colSpan="9" className="text-center py-4">
-                <div className="spinner-border" role="status" aria-hidden="true" />
-                <span className="ms-2">Cargando carros...</span>
-              </td>
+              <th>ID</th>
+              <th>Marca</th>
+              <th>Modelo</th>
+              <th>Año</th>
+              <th>Placa</th>
+              <th>Precio/Día</th>
+              <th>Estado</th>
+              <th>Imagen</th>
+              <th>Acciones</th>
             </tr>
-          ) : carros.length === 0 ? (
-            <tr>
-              <td colSpan="9" className="text-center">No hay carros registrados</td>
-            </tr>
-          ) : (
-            carros.map((c) => (
-              <tr key={c.id}>
-                <td>{c.id}</td>
-                <td>{c.marca}</td>
-                <td>{c.modelo}</td>
-                <td>{c.año}</td>
-                <td>{c.placa}</td>
-                <td>S/. {c.precio_por_dia}</td>
-                <td><span className={`badge bg-${c.estado === 'disponible' ? 'success' : c.estado === 'alquilado' ? 'warning' : 'info'}`}>{c.estado}</span></td>
-                <td>
-                  {c.imagen_url ? (
-                    <img src={resolveImageUrl(c.imagen_url)} alt={`${c.marca} ${c.modelo}`} style={{ width: 64, height: 40, objectFit: "cover" }} />
-                  ) : (
-                    <small className="text-muted">Sin imagen</small>
-                  )}
-                </td>
-                <td>
-                  <button className="btn btn-warning btn-sm me-2" onClick={() => editarCarro(c)}>Editar</button>
-                  <button className="btn btn-danger btn-sm" onClick={() => eliminarCarro(c.id)}>Eliminar</button>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {loadingCars ? (
+              <tr><td colSpan="9" className="text-center">Cargando carros...</td></tr>
+            ) : carros.length > 0 ? (
+              carros.map((carro) => (
+                <tr key={carro.id}>
+                  <td>{carro.id}</td>
+                  <td>{carro.marca}</td>
+                  <td>{carro.modelo}</td>
+                  <td>{carro.año}</td>
+                  <td>{carro.placa}</td>
+                  <td>S/. {parseFloat(carro.precio_por_dia).toFixed(2)}</td>
+                  <td>
+                    <span className={`badge bg-${carro.estado === 'disponible' ? 'success' : carro.estado === 'alquilado' ? 'warning' : 'info'}`}>
+                      {carro.estado}
+                    </span>
+                  </td>
+                  <td>
+                    {carro.imagen_url ? (
+                      <img src={resolveImageUrl(carro.imagen_url)} alt={`${carro.marca} ${carro.modelo}`} style={{ width: '100px', height: 'auto', borderRadius: '5px' }} />
+                    ) : (
+                      "Sin imagen"
+                    )}
+                  </td>
+                  <td>
+                    <button className="btn btn-warning btn-sm me-2" onClick={() => editarCarro(carro)}>Editar</button>
+                    <button className="btn btn-danger btn-sm" onClick={() => eliminarCarro(carro.id)}>Eliminar</button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr><td colSpan="9" className="text-center">No se encontraron carros.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

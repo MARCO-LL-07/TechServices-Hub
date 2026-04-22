@@ -1,7 +1,7 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const errorHandler = require('./middleware/errorHandler');
 const sequelize = require('./config/ConexionDB');
 
@@ -17,7 +17,11 @@ app.use(cors(corsOptions));
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
+// Servir archivos estáticos desde la carpeta 'uploads' que está en la raíz del proyecto
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// También servimos específicamente la carpeta de carros para mayor seguridad
+app.use('/uploads/cars', express.static(path.join(__dirname, '../uploads/cars')));
 
 // Database connection test
 sequelize.authenticate()
@@ -27,6 +31,15 @@ sequelize.authenticate()
 // Routes
 app.get('/', (req, res) => {
     res.send('API is running...');
+});
+
+app.get('/health', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.json({ ok: true, database: 'connected' });
+  } catch (error) {
+    res.status(500).json({ ok: false, database: 'disconnected', error: error.message });
+  }
 });
 
 // TODO: Add your application routes here

@@ -4,15 +4,23 @@ const { Carro, Categoria } = require('../models/Index');
 const buildCarPayload = (req) => {
   const body = { ...req.body };
 
+  // Compatibilidad para 'anio' vs 'año'
   if (body.anio && !body.año) {
     body.año = body.anio;
+    delete body.anio;
   }
 
+  // Si se subió un archivo, guarda la ruta relativa
   if (req.file) {
+    // La URL será relativa, ej: /uploads/cars/car-1678886400000-123456789.jpg
     body.imagen_url = `/uploads/cars/${req.file.filename}`;
+    console.log('Imagen subida y guardada en:', body.imagen_url);
+  } else if (body.imagen_url === '') {
+    // Si no se envía un archivo nuevo y el campo de URL está vacío, se elimina la imagen.
+    body.imagen_url = null;
   }
 
-  delete body.anio;
+
   return body;
 };
 
